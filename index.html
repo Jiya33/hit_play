@@ -415,11 +415,11 @@
     </div>
     <div class="field" data-page-node-id="6nYIVzUfZ8TYSh5JoKfnoP">
       <label data-page-node-id="vi5tV5yG19nUvUsMKK9Rn5">运动名称</label>
-      <input type="text" id="inpName" placeholder="如：帕梅拉15分钟站立腹肌" maxlength="50" data-page-node-id="espJenYltFPCBDWfZNAyuH">
+      <input type="text" id="inpName" placeholder="留空自动取标题" maxlength="60" data-page-node-id="espJenYltFPCBDWfZNAyuH">
     </div>
     <div class="field" id="fieldUrl" data-page-node-id="GROlcAkqpF0XyrBWHRq2I5">
       <label data-page-node-id="jKMVCGHYkLf4HRokN5s0Sy">视频链接</label>
-      <input type="url" id="inpUrl" placeholder="粘贴小红书 / B站 / 抖音链接" data-page-node-id="StGLLSXKmMpB0IdQrNqERy">
+      <input type="url" id="inpUrl" placeholder="粘贴链接（可带标题文字，自动识别）" data-page-node-id="StGLLSXKmMpB0IdQrNqERy">
     </div>
     <div class="field" data-page-node-id="XNuNKQEZKYswMRa90MDTxZ">
       <label data-page-node-id="kXW8gsRccnWsdA20G8M22w">选择标签（可多选）</label>
@@ -518,9 +518,62 @@ function detectPlatform(url) {
 
 function isValidUrl(str) {
   try {
-    const u = new URL(str.trim());
-    return u.protocol === "http" || u.protocol === "https";
+    const u = new URL(String(str).trim());
+    return u.protocol === "http:" || u.protocol === "https:";
   } catch (e) { return false; }
+}
+
+/* 从「标题 + 链接」混合文本中提取链接
+   例：【帕梅拉 - 10分钟暴汗有氧-哔哩哔哩】 https://b23.tv/Zd0EXCr → https://b23.tv/Zd0EXCr */
+function extractUrl(text) {
+  const s = String(text || "").trim();
+  if (!s) return "";
+  if (isValidUrl(s)) return s.trim();
+  const m = s.match(/https?:\/\/[^\s，,、）)】\]"'》]+/i);
+  return m ? m[0].replace(/[。，,]$/, "") : "";
+}
+
+/* 从混合文本中提取标题（去掉书名号与平台后缀） */
+function extractTitle(text) {
+  const s = String(text || "");
+  const url = extractUrl(s);
+  const raw = (s.split(url)[0] || "").trim();
+  if (!raw) return "";
+
+  // 优先取【】/ [] 内的标题
+  const bracket = raw.match(/[【\[]([^】\]]{2,})[】\]]/);
+  let title = bracket ? bracket[1].trim() : "";
+  if (bracket) {
+    const rest = raw.replace(/[【\[][^】\]]*[】\]]/g, "").trim();
+    if (title.length < 6 && rest) title = (title + rest).trim();
+  } else {
+    title = raw
+      .replace(/^\d+(\.\d+)?\s*/, "")                                        // 口令前缀数字
+      .replace(/^复制(打开)?\s*(抖音|小红书|B站|bilibili)?\s*[，,]?\s*(看看)?/i, "") // 抖音/小红书口令
+      .replace(/^【?复制此?链?接?】?/i, "");
+  }
+
+  return title
+    .replace(/[【\[\]】]/g, "")
+    .replace(/[\-–—]\s*(哔哩哔哩|bilibili|小红书|抖音|知乎|微博)\s*$/i, "")   // 平台后缀
+    .replace(/^[\s\-|｜:：]+|[\s\-|｜:：]+$/g, "")                            // 首尾杂符
+    .trim();
+}
+
+/* 粘贴/失焦时：自动拆分「标题 + 链接」，并回填名称 */
+function normalizeUrlInput() {
+  const urlInput = document.getElementById("inpUrl");
+  const nameInput = document.getElementById("inpName");
+  const raw = urlInput.value;
+  if (!raw || !raw.trim()) return;
+  const url = extractUrl(raw);
+  if (url) {
+    if (url !== raw.trim()) {
+      urlInput.value = url;
+      const title = extractTitle(raw);
+      if (!nameInput.value.trim() && title) nameInput.value = title;
+    }
+  }
 }
 
 let toastTimer = null;
@@ -828,6 +881,11 @@ function renderTagSelect() {
 }
 
 document.getElementById("btnAdd").addEventListener("click", openAddModal);
+
+// 粘贴或失焦时自动拆分「标题 + 链接」
+const urlInputEl = document.getElementById("inpUrl");
+urlInputEl.addEventListener("paste", () => setTimeout(normalizeUrlInput, 0));
+urlInputEl.addEventListener("blur", normalizeUrlInput);
 document.getElementById("btnClose").addEventListener("click", hideModal);
 document.getElementById("modalMask").addEventListener("click", (e) => {
   if (e.target === e.currentTarget) hideModal();
@@ -847,7 +905,10 @@ document.getElementById("inpNewTag").addEventListener("keydown", (e) => {
 });
 
 document.getElementById("btnSave").addEventListener("click", () => {
-  const name = document.getElementById("inpName").value.trim();
+  let name = document.getElementById("inpName").value.trim();
+  const rawUrl = document.getElementById("inpUrl").value || "";
+  // 名称留空时，尝试从粘贴文本里自动提取标题
+  if (!name) name = extractTitle(rawUrl);
   if (!name) { showToast("请输入运动名称"); return; }
 
   if (modalMode === "rename") {
@@ -867,8 +928,12 @@ document.getElementById("btnSave").addEventListener("click", () => {
     return;
   }
 
-  const url = document.getElementById("inpUrl").value.trim();
-  if (!isValidUrl(url)) { showToast("请输入有效的视频链接（以 http/https 开头）"); return; }
+  const url = extractUrl(rawUrl);
+  if (!isValidUrl(url)) {
+    showToast("未识别到链接，请粘贴含 http/https 的地址");
+    return;
+  }
+  document.getElementById("inpUrl").value = url;
 
   const item = {
     id: "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
