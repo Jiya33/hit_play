@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="Q8d0keeFWBAjpaQH7CX4TL">
+<head data-page-node-id="W7encvJEqQ2aaSGidVU3At">
+<meta charset="UTF-8" data-page-node-id="e1ZBwvlMm1fiF3jNjEzlpq">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" data-page-node-id="6YrIxgAqDNCVFkSZb9tT3k">
+<meta name="theme-color" content="#ffffff" data-page-node-id="L0vhGGbDIxvmHHyxq2EoIx">
+<title>健身视频库</title>
+<style>
+  :root {
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --ink: #1a1a1a;
+    --ink-2: #555555;
+    --ink-3: #999999;
+    --line: #e5e5e5;
+    --chip-bg: #efefef;
+    --chip-active-bg: #1a1a1a;
+    --chip-active-ink: #ffffff;
+    --danger: #666666;
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 16px calc(24px + env(safe-area-inset-bottom));
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    padding: 28px 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  header h1 { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+  header .sub { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+  .btn-add {
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    min-height: 44px;
+  }
+  .btn-add:active { opacity: 0.8; }
+
+  /* ---------- Filter bar ---------- */
+  .filter-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    padding: 10px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .btn-manage {
+    flex-shrink: 0;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink-2);
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    min-height: 36px;
+    white-space: nowrap;
+  }
+  .btn-manage.active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+    font-weight: 600;
+  }
+  .filter-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+  .filter-scroll::-webkit-scrollbar { display: none; }
+
+  .chip {
+    flex-shrink: 0;
+    border: none;
+    background: var(--chip-bg);
+    color: var(--ink-2);
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    min-height: 36px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .chip.active {
+    background: var(--chip-active-bg);
+    color: var(--chip-active-ink);
+    font-weight: 600;
+  }
+
+  .manage-row {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 12px;
+  }
+  .manage-row input {
+    flex: 1;
+    min-width: 0;
+    border: 1px dashed var(--ink-3);
+    background: var(--card);
+    border-radius: 10px;
+    padding: 0 14px;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    min-height: 42px;
+  }
+  .manage-row input:focus { border-color: var(--ink-2); }
+
+  .chip-del {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-left: 6px;
+    margin-right: -8px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.08);
+    font-size: 11px;
+    line-height: 1;
+  }
+  .chip.active .chip-del { background: rgba(255, 255, 255, 0.22); }
+
+  /* ---------- Video list ---------- */
+  .count {
+    font-size: 12px;
+    color: var(--ink-3);
+    margin: 4px 2px 10px;
+  }
+
+  .video-list { display: flex; flex-direction: column; gap: 12px; }
+
+  @media (min-width: 560px) {
+    .video-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    word-break: break-word;
+    cursor: pointer;
+  }
+  .card-title:active { opacity: 0.6; }
+
+  .platform {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 3px 8px;
+    white-space: nowrap;
+  }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-size: 11px;
+    color: var(--ink-2);
+    background: var(--chip-bg);
+    border-radius: 6px;
+    padding: 3px 9px;
+    cursor: pointer;
+  }
+  .tag:active { opacity: 0.6; }
+  .tag-none { font-size: 11px; color: var(--ink-3); }
+
+  .card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+    margin-top: 2px;
+  }
+  .actions-left, .actions-right { display: flex; gap: 4px; }
+
+  .icon-btn {
+    border: none;
+    background: transparent;
+    color: var(--ink-2);
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 36px;
+  }
+  .icon-btn:active { background: var(--chip-bg); }
+  .icon-btn.danger { color: #b0b0b0; }
+  .icon-btn.danger:active { color: #333; }
+
+  .empty {
+    text-align: center;
+    color: var(--ink-3);
+    font-size: 14px;
+    padding: 60px 0;
+  }
+
+  /* ---------- Modal ---------- */
+  .modal-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-mask.show { display: flex; }
+
+  .modal {
+    background: var(--card);
+    width: 100%;
+    max-width: 720px;
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+  @media (min-width: 560px) {
+    .modal-mask { align-items: center; padding: 24px; }
+    .modal { border-radius: 20px; }
+  }
+
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .modal-head h2 { font-size: 17px; font-weight: 700; }
+  .btn-close {
+    border: none;
+    background: var(--chip-bg);
+    color: var(--ink-2);
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    color: var(--ink-2);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .field input[type="text"], .field input[type="url"] {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--bg);
+    outline: none;
+    min-height: 46px;
+  }
+  .field input:focus { border-color: var(--ink-2); }
+
+  .tag-select { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag-select .chip { min-height: 34px; padding: 6px 14px; }
+  .tag-select .chip.selected {
+    background: var(--ink);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .custom-tag-row { display: flex; gap: 8px; margin-top: 10px; }
+  .custom-tag-row input { flex: 1; }
+  .btn-mini {
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 0 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    min-height: 46px;
+  }
+  .btn-mini:active { background: var(--chip-bg); }
+
+  .btn-primary {
+    width: 100%;
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 8px;
+    min-height: 50px;
+  }
+  .btn-primary:active { opacity: 0.85; }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(48px + env(safe-area-inset-bottom));
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: #fff;
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 200;
+    max-width: 80vw;
+    text-align: center;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body data-page-node-id="lLJJUmHFGCzXPnDO7Df57G">
+<div class="container" data-page-node-id="Mt1Pmb7OOb70vTG9cFDjoU">
+  <header data-page-node-id="xFtBlwOxhhqny58b4TgI3x">
+    <div data-page-node-id="0Jj1bZDXygAzMwAsMjZNHY">
+      <h1 data-page-node-id="ADyF7D2SFEohtKILcPUFwZ">健身视频库</h1>
+      <div class="sub" data-page-node-id="KKYEd0QeqY1GTY1rtZngCi">教程收藏 · 分类管理</div>
+    </div>
+    <button class="btn-add" id="btnAdd" data-page-node-id="kFXXLMxW0yuydgyedNSR5u">＋ 新增视频</button>
+  </header>
+
+  <div class="filter-bar" data-page-node-id="R7JSUphm2svRpYPQ041CAJ">
+    <div class="filter-scroll" id="filterBar" data-page-node-id="ucc4gaglCuKoCpve7EuNQp"></div>
+    <button class="btn-manage" id="btnManageTags">管理</button>
+  </div>
+
+  <div class="manage-row" id="manageRow" style="display:none">
+    <input type="text" id="inpQuickTag" placeholder="输入新标签名称" maxlength="10">
+    <button class="btn-mini" id="btnQuickAddTag">＋ 新增标签</button>
+  </div>
+
+  <div class="count" id="countText" data-page-node-id="VYHgHHHGMNtPIwluwC9YLo"></div>
+  <div class="video-list" id="videoList" data-page-node-id="q6PqdhBZkHULKkxvn7UGih"></div>
+  <div class="empty" id="emptyTip" style="display:none" data-page-node-id="t3PGgI5pfy849SLsTtcbp7">该分类下暂无视频</div>
+</div>
+
+<!-- 新增/编辑弹窗 -->
+<div class="modal-mask" id="modalMask" data-page-node-id="VboJVrwn1N6O8Uz5vdUp54">
+  <div class="modal" data-page-node-id="lFjIxVtB4Y47zHqSuDTrKY">
+    <div class="modal-head" data-page-node-id="3f0pC7OC4aZaCh555zL94B">
+      <h2 id="modalTitle" data-page-node-id="DOUdecDUuhFWFt0jHcGM2o">新增视频</h2>
+      <button class="btn-close" id="btnClose" data-page-node-id="hvVg29ehnNJDEuIOj2zKV7">✕</button>
+    </div>
+    <div class="field" data-page-node-id="6nYIVzUfZ8TYSh5JoKfnoP">
+      <label data-page-node-id="vi5tV5yG19nUvUsMKK9Rn5">运动名称</label>
+      <input type="text" id="inpName" placeholder="如：帕梅拉15分钟站立腹肌" maxlength="50" data-page-node-id="espJenYltFPCBDWfZNAyuH">
+    </div>
+    <div class="field" id="fieldUrl" data-page-node-id="GROlcAkqpF0XyrBWHRq2I5">
+      <label data-page-node-id="jKMVCGHYkLf4HRokN5s0Sy">视频链接</label>
+      <input type="url" id="inpUrl" placeholder="粘贴小红书 / B站 / 抖音链接" data-page-node-id="StGLLSXKmMpB0IdQrNqERy">
+    </div>
+    <div class="field" data-page-node-id="XNuNKQEZKYswMRa90MDTxZ">
+      <label data-page-node-id="kXW8gsRccnWsdA20G8M22w">选择标签（可多选）</label>
+      <div class="tag-select" id="tagSelect" data-page-node-id="GPfN6RGCCLGJh83pHi4Fk2"></div>
+      <div class="custom-tag-row" data-page-node-id="gCUsqo0RF42IZzAlEOcFKF">
+        <input type="text" id="inpNewTag" placeholder="自定义标签名称" maxlength="10" data-page-node-id="uT2GyiEhWsRCqzdjFaV4z5">
+        <button class="btn-mini" id="btnAddTag" data-page-node-id="O1ylTkVQ6qSdZjcWvhtHbC">添加</button>
+      </div>
+    </div>
+    <button class="btn-primary" id="btnSave" data-page-node-id="6Wriqi0U9FTxDdMTCpgnDe">保存</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" data-page-node-id="woMxjLPRzDOMX3Ql4G1hwc"></div>
+
+<script>
+/* =====================================================
+ * 默认视频数据（在此维护；增删改请直接编辑本区块）
+ * ===================================================== */
+const DEFAULT_VIDEOS = [
+  { id: "d01", name: "臀腿健身房",           url: "https://xhslink.cn/o/AGf92K6ySQK", tags: ["臀腿"] },
+  { id: "d02", name: "沙漏腰",               url: "https://b23.tv/Hyp2Tmr",           tags: ["腰腹"] },
+  { id: "d03", name: "帕梅拉15分钟站立腹肌", url: "https://b23.tv/vQ2s7Ak",           tags: ["腰腹"] },
+  { id: "d04", name: "帕梅拉",               url: "https://b23.tv/eAsIPm4",           tags: ["腰腹"] },
+  { id: "d05", name: "安娜哑铃手臂背",       url: "https://b23.tv/DoJRdCt",           tags: ["手臂"] },
+  { id: "d06", name: "安娜哑铃手臂塑形",     url: "https://b23.tv/BVB5kgp",           tags: ["手臂"] },
+  { id: "d07", name: "斜方肌代偿",           url: "https://b23.tv/LxGK20F",           tags: ["肩背"] },
+  { id: "d08", name: "躺虐卷腹",             url: "https://b23.tv/7xfqO4P",           tags: ["腰腹"] },
+  { id: "d09", name: "盆骨回正",             url: "https://b23.tv/P5LJEhH",           tags: ["体态"] },
+  { id: "d10", name: "安娜高强度燃脂",       url: "https://b23.tv/oNz4J0F",           tags: ["燃脂"] },
+  { id: "d11", name: "刘板筋瘦手臂",         url: "https://v.douyin.com/v9QRBtl-LwA/", tags: ["手臂"] }
+];
+
+const BASE_TAGS = ["臀腿", "腰腹", "手臂", "肩背", "体态", "燃脂"];
+const LS_KEY = "fitness_video_lib_v1";
+
+/* =====================================================
+ * 状态与存储
+ * ===================================================== */
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { /* ignore */ }
+  return { added: [], deleted: [], renames: {}, customTags: [], hiddenTags: [], tagOverrides: {} };
+}
+let state = loadState();
+// 兼容旧版本数据：补齐新增字段
+state.hiddenTags = state.hiddenTags || [];
+state.tagOverrides = state.tagOverrides || {};
+state.customTags = state.customTags || [];
+state.renames = state.renames || {};
+state.deleted = state.deleted || [];
+state.added = state.added || [];
+
+function saveState() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+  } catch (e) {
+    showToast("保存失败：浏览器存储不可用");
+  }
+}
+
+function allVideos() {
+  const list = DEFAULT_VIDEOS
+    .filter(v => !state.deleted.includes(v.id))
+    .map(v => ({
+      ...v,
+      name: state.renames[v.id] || v.name,
+      tags: state.tagOverrides[v.id] || v.tags || [],
+      isDefault: true
+    }))
+    .concat(state.added.map(v => ({ ...v, tags: v.tags || [], isDefault: false })));
+  // 默认视频在前，其余按添加顺序倒序
+  return list;
+}
+
+function allTags() {
+  const used = new Set();
+  BASE_TAGS.forEach(t => { if (!state.hiddenTags.includes(t)) used.add(t); });
+  state.customTags.forEach(t => used.add(t));
+  allVideos().forEach(v => (v.tags || []).forEach(t => used.add(t)));
+  return Array.from(used);
+}
+
+/* =====================================================
+ * 工具函数
+ * ===================================================== */
+function detectPlatform(url) {
+  const u = (url || "").toLowerCase();
+  if (u.includes("xhslink") || u.includes("xiaohongshu")) return "小红书";
+  if (u.includes("b23.tv") || u.includes("bilibili")) return "B站";
+  if (u.includes("douyin")) return "抖音";
+  return "链接";
+}
+
+function isValidUrl(str) {
+  try {
+    const u = new URL(str.trim());
+    return u.protocol === "http" || u.protocol === "https";
+  } catch (e) { return false; }
+}
+
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 1600);
+}
+
+function copyText(text) {
+  const done = () => showToast("链接已复制");
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand("copy");
+    done();
+  } catch (e) {
+    showToast("复制失败，请长按链接手动复制");
+  }
+  document.body.removeChild(ta);
+}
+
+function openLink(url) {
+  // 兼容部分移动端浏览器 / PWA 环境
+  const w = window.open(url, "_blank", "noopener");
+  if (!w) window.location.href = url;
+}
+
+/* =====================================================
+ * 渲染
+ * ===================================================== */
+let activeFilter = "全部";
+let manageMode = false;
+
+function renderFilterBar() {
+  const bar = document.getElementById("filterBar");
+  const manageBtn = document.getElementById("btnManageTags");
+  const tags = ["全部", ...allTags()];
+
+  bar.innerHTML = tags.map(t => {
+    const del = (manageMode && t !== "全部")
+      ? `<span class="chip-del" data-del="${t}" title="删除该标签">✕</span>` : "";
+    return `<button class="chip ${t === activeFilter ? "active" : ""}" data-tag="${t}">${t}${del}</button>`;
+  }).join("");
+
+  manageBtn.textContent = manageMode ? "完成" : "管理";
+  manageBtn.classList.toggle("active", manageMode);
+
+  bar.querySelectorAll(".chip").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const delEl = e.target.closest("[data-del]");
+      if (delEl && manageMode) {
+        e.stopPropagation();
+        deleteTag(delEl.dataset.del);
+        return;
+      }
+      const t = btn.dataset.tag;
+      if (manageMode && t !== "全部") return; // 管理模式下不切换筛选，避免误触
+      activeFilter = t;
+      render();
+    });
+  });
+}
+
+/* =====================================================
+ * 删除标签（同时从所有视频上解绑）
+ * ===================================================== */
+function deleteTag(name) {
+  if (!confirm(`确定删除标签「${name}」吗？\n该标签会从所有视频上一并移除。`)) return;
+
+  // 1. 从默认视频解绑（记录覆盖值）
+  DEFAULT_VIDEOS.forEach(v => {
+    const cur = state.tagOverrides[v.id] || v.tags || [];
+    if (cur.includes(name)) {
+      state.tagOverrides[v.id] = cur.filter(t => t !== name);
+    }
+  });
+  // 2. 从用户新增视频解绑
+  state.added = state.added.map(v => ({
+    ...v,
+    tags: (v.tags || []).filter(t => t !== name)
+  }));
+  // 3. 移除标签本身
+  if (state.customTags.includes(name)) {
+    state.customTags = state.customTags.filter(t => t !== name);
+  }
+  if (BASE_TAGS.includes(name) && !state.hiddenTags.includes(name)) {
+    state.hiddenTags.push(name);
+  }
+  // 4. 若正在筛该标签，回到全部
+  if (activeFilter === name) activeFilter = "全部";
+
+  saveState();
+  render();
+  showToast(`标签「${name}」已删除`);
+}
+
+/* =====================================================
+ * 标签管理：新增 / 删除
+ * ===================================================== */
+function addCustomTag(name) {
+  const t = (name || "").trim();
+  if (!t) { showToast("请输入标签名称"); return false; }
+  if (allTags().includes(t)) { showToast(`标签「${t}」已存在`); return false; }
+  state.customTags.push(t);
+  state.hiddenTags = state.hiddenTags.filter(x => x !== t); // 重新启用同名标签
+  saveState();
+  render();
+  showToast(`标签「${t}」已添加`);
+  return true;
+}
+
+// 主页面快速新增标签
+document.getElementById("btnQuickAddTag").addEventListener("click", () => {
+  const inp = document.getElementById("inpQuickTag");
+  if (addCustomTag(inp.value)) inp.value = "";
+});
+document.getElementById("inpQuickTag").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const inp = document.getElementById("inpQuickTag");
+    if (addCustomTag(inp.value)) inp.value = "";
+  }
+});
+
+document.getElementById("btnManageTags").addEventListener("click", () => {
+  manageMode = !manageMode;
+  render();
+  document.getElementById("manageRow").style.display = manageMode ? "flex" : "none";
+  if (manageMode) {
+    showToast("点击标签右侧 ✕ 删除，或下方新增标签");
+  } else {
+    document.getElementById("inpQuickTag").value = "";
+  }
+});
+
+function renderList() {
+  const listEl = document.getElementById("videoList");
+  const emptyEl = document.getElementById("emptyTip");
+  const countEl = document.getElementById("countText");
+  const videos = allVideos().filter(v =>
+    activeFilter === "全部" || (v.tags || []).includes(activeFilter)
+  );
+
+  countEl.textContent = activeFilter === "全部"
+    ? `共 ${videos.length} 个视频`
+    : `「${activeFilter}」共 ${videos.length} 个视频`;
+
+  if (!videos.length) {
+    listEl.innerHTML = "";
+    emptyEl.style.display = "block";
+    return;
+  }
+  emptyEl.style.display = "none";
+
+  listEl.innerHTML = videos.map(v => `
+    <div class="card" data-id="${v.id}">
+      <div class="card-top">
+        <div class="card-title" data-act="open" title="点击打开视频">${escapeHtml(v.name)}</div>
+        <div class="platform">${detectPlatform(v.url)}</div>
+      </div>
+      <div class="tags">
+        ${(v.tags && v.tags.length)
+          ? v.tags.map(t => `<span class="tag" data-act="filter" data-tag="${t}">${t}</span>`).join("")
+          : `<span class="tag-none">未设置标签</span>`}
+      </div>
+      <div class="card-actions">
+        <div class="actions-left">
+          <button class="icon-btn" data-act="open">↗ 打开</button>
+          <button class="icon-btn" data-act="copy">⧉ 复制地址</button>
+        </div>
+        <div class="actions-right">
+          <button class="icon-btn" data-act="rename">✎ 名称</button>
+          <button class="icon-btn danger" data-act="delete">✕ 删除</button>
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, m => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[m]);
+}
+
+function render() {
+  renderFilterBar();
+  renderList();
+}
+
+/* =====================================================
+ * 卡片交互（事件委托）
+ * ===================================================== */
+document.getElementById("videoList").addEventListener("click", (e) => {
+  const card = e.target.closest(".card");
+  if (!card) return;
+  const id = card.dataset.id;
+  const video = allVideos().find(v => v.id === id);
+  if (!video) return;
+
+  const actionEl = e.target.closest("[data-act]");
+  if (!actionEl) return;
+  const act = actionEl.dataset.act;
+
+  if (act === "open") {
+    openLink(video.url);
+  } else if (act === "copy") {
+    copyText(video.url);
+  } else if (act === "rename") {
+    openRenameModal(video);
+  } else if (act === "delete") {
+    deleteVideo(video);
+  } else if (act === "filter") {
+    activeFilter = actionEl.dataset.tag;
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+});
+
+/* =====================================================
+ * 删除
+ * ===================================================== */
+function deleteVideo(video) {
+  const msg = video.isDefault
+    ? `确定删除默认视频「${video.name}」吗？`
+    : `确定删除「${video.name}」吗？`;
+  if (!confirm(msg)) return;
+  if (video.isDefault) {
+    if (!state.deleted.includes(video.id)) state.deleted.push(video.id);
+  } else {
+    state.added = state.added.filter(v => v.id !== video.id);
+  }
+  saveState();
+  render();
+  showToast("已删除");
+}
+
+/* =====================================================
+ * 重命名
+ * ===================================================== */
+let renameTargetId = null;
+function openRenameModal(video) {
+  renameTargetId = video.id;
+  document.getElementById("modalTitle").textContent = "编辑视频";
+  document.getElementById("inpName").value = video.name;
+  document.getElementById("inpUrl").value = video.url;
+  document.getElementById("fieldUrl").style.display = "none";
+  selectedTags = new Set(video.tags || []);
+  renderTagSelect();
+  showModal();
+}
+
+/* =====================================================
+ * 新增 / 保存
+ * ===================================================== */
+let modalMode = "add"; // add | rename
+let selectedTags = new Set();
+
+function openAddModal() {
+  modalMode = "add";
+  renameTargetId = null;
+  document.getElementById("modalTitle").textContent = "新增视频";
+  document.getElementById("inpName").value = "";
+  document.getElementById("inpUrl").value = "";
+  document.getElementById("fieldUrl").style.display = "block";
+  selectedTags = new Set();
+  renderTagSelect();
+  showModal();
+}
+
+function showModal() {
+  document.getElementById("modalMask").classList.add("show");
+  setTimeout(() => document.getElementById("inpName").focus(), 100);
+}
+function hideModal() {
+  document.getElementById("modalMask").classList.remove("show");
+}
+
+function renderTagSelect() {
+  const box = document.getElementById("tagSelect");
+  box.innerHTML = allTags().map(t =>
+    `<button class="chip ${selectedTags.has(t) ? "selected" : ""}" data-tag="${t}">${t}</button>`
+  ).join("");
+  box.querySelectorAll(".chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const t = btn.dataset.tag;
+      if (selectedTags.has(t)) selectedTags.delete(t);
+      else selectedTags.add(t);
+      renderTagSelect();
+    });
+  });
+}
+
+document.getElementById("btnAdd").addEventListener("click", openAddModal);
+document.getElementById("btnClose").addEventListener("click", hideModal);
+document.getElementById("modalMask").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) hideModal();
+});
+
+function addTagFromModal() {
+  const inp = document.getElementById("inpNewTag");
+  const name = inp.value.trim();
+  if (!addCustomTag(name)) return;
+  selectedTags.add(name);          // 新标签自动选中，绑定到当前视频
+  inp.value = "";
+  renderTagSelect();
+}
+document.getElementById("btnAddTag").addEventListener("click", addTagFromModal);
+document.getElementById("inpNewTag").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") addTagFromModal();
+});
+
+document.getElementById("btnSave").addEventListener("click", () => {
+  const name = document.getElementById("inpName").value.trim();
+  if (!name) { showToast("请输入运动名称"); return; }
+
+  if (modalMode === "rename") {
+    if (renameTargetId) {
+      const v = allVideos().find(x => x.id === renameTargetId);
+      if (v && v.isDefault) {
+        state.renames[renameTargetId] = name;
+        state.tagOverrides[renameTargetId] = [...selectedTags];
+      } else {
+        state.added = state.added.map(x => x.id === renameTargetId ? { ...x, name, tags: [...selectedTags] } : x);
+      }
+    }
+    saveState();
+    hideModal();
+    render();
+    showToast("名称已更新");
+    return;
+  }
+
+  const url = document.getElementById("inpUrl").value.trim();
+  if (!isValidUrl(url)) { showToast("请输入有效的视频链接（以 http/https 开头）"); return; }
+
+  const item = {
+    id: "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name,
+    url,
+    tags: [...selectedTags]
+  };
+  state.added.unshift(item);
+  saveState();
+  hideModal();
+  render();
+  showToast("视频已添加");
+});
+
+/* =====================================================
+ * 初始化
+ * ===================================================== */
+render();
+</script>
+</body>
+</html>
